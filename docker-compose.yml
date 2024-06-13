@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  catalog-service:
+    build: ./backend/catalog-service
+    ports:
+      - "3000:3000"
+    networks:
+      - bookstore-network
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  order-service:
+    build: ./backend/order-service
+    ports:
+      - "3001:3001"
+    networks:
+      - bookstore-network
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  notification-service:
+    build: ./backend/notification-service
+    ports:
+      - "3002:3002"
+      - "3003:3003"
+    networks:
+      - bookstore-network
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  react-app:
+    build: ./frontend
+    ports:
+      - "80:80"
+    networks:
+      - bookstore-network
+    depends_on:
+      - order-service
+      - notification-service
+
+  mongodb:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    networks:
+      - bookstore-network
+    volumes:
+      - mongo-data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+    networks:
+      - bookstore-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  bookstore-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
